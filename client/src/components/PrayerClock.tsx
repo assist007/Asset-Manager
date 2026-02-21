@@ -11,7 +11,7 @@ export default function PrayerClock() {
   const progress = info?.progressInCurrent ?? 0;
   const countdown = info
     ? formatCountdown(info.secondsUntilNext, lang)
-    : "০০:০০:০০";
+    : "—";
 
   const current = info?.currentSlot ?? null;
   const next    = info?.nextSlot    ?? null;
@@ -20,37 +20,43 @@ export default function PrayerClock() {
   const liveClock = formatLiveClock(now, lang);
   const ampm      = formatAmPm(now, lang);
 
-  const W = 280, H = 148;
+  // Arc geometry — bottom-anchored semicircle opening upward
+  const W = 300, H = 160;
   const cx = W / 2, cy = H;
-  const R = 114;
-  const GAP_DEG = 30;
-  const START = 180 + GAP_DEG;
-  const END   = 360 - GAP_DEG;
+  const R = 124;
+  const GAP_DEG = 28;
+  const START = 180 + GAP_DEG;   // 208°
+  const END   = 360 - GAP_DEG;   // 332°
   const SWEEP = END - START;
 
   function polar(deg: number) {
     const rad = (deg * Math.PI) / 180;
     return { x: cx + R * Math.cos(rad), y: cy + R * Math.sin(rad) };
   }
-
   function arc(a0: number, a1: number) {
     const s = polar(a0), e = polar(a1);
     const large = Math.abs(a1 - a0) > 180 ? 1 : 0;
-    const sw    = a1 > a0 ? 1 : 0;
-    return `M ${s.x} ${s.y} A ${R} ${R} 0 ${large} ${sw} ${e.x} ${e.y}`;
+    return `M ${s.x} ${s.y} A ${R} ${R} 0 ${large} 1 ${e.x} ${e.y}`;
   }
 
   const clampedProgress = Math.min(1, Math.max(0.005, progress));
   const filledEnd = START + SWEEP * clampedProgress;
   const dot = polar(filledEnd);
 
+  // Content area sits inside the arc interior (y ≈ 28 … 140)
+  // We use absolute positioning from the TOP so it never overflows upward
+  const CONTENT_TOP = 22;
+
   return (
-    <div className="relative flex flex-col items-center" style={{ height: H + 44 }}>
+    <div
+      className="relative w-full flex items-start justify-center"
+      style={{ height: H + 8 }}
+    >
+      {/* Arc SVG */}
       <svg
         width={W} height={H + 8}
         viewBox={`0 0 ${W} ${H + 8}`}
-        className="absolute top-0 left-1/2 -translate-x-1/2"
-        style={{ overflow: "visible" }}
+        style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", overflow: "visible" }}
       >
         <defs>
           <linearGradient id="pcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -64,68 +70,100 @@ export default function PrayerClock() {
           </filter>
         </defs>
 
+        {/* track */}
         <path d={arc(START, END)} fill="none"
           stroke="rgba(255,255,255,0.11)" strokeWidth="9" strokeLinecap="round" />
+        {/* filled */}
         <path d={arc(START, filledEnd)} fill="none"
           stroke="url(#pcGrad)" strokeWidth="9" strokeLinecap="round"
           filter="url(#pcGlow)" />
+        {/* dot */}
         <circle cx={dot.x} cy={dot.y} r="11" fill="rgba(251,191,36,0.25)" />
         <circle cx={dot.x} cy={dot.y} r="6.5" fill="#fbbf24" filter="url(#pcGlow)" />
         <circle cx={dot.x} cy={dot.y} r="2.5" fill="white" />
       </svg>
 
-      {/* centre content */}
+      {/* ── Text content inside the arc ── */}
+      {/* Positioned from the TOP so content grows downward — never overflows upward */}
       <div
-        className="absolute flex flex-col items-center gap-0"
-        style={{ bottom: 36, left: 0, right: 0 }}
+        style={{
+          position: "absolute",
+          top: CONTENT_TOP,
+          left: 0,
+          right: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 0,
+          pointerEvents: "none",
+        }}
       >
-        {/* ── live clock with seconds ── */}
-        <div className="flex items-baseline gap-1.5 mb-0.5">
+        {/* Current prayer name */}
+        <p
+          className={cn(
+            "font-bold text-white leading-tight",
+            preferences.seniorMode ? "text-base" : "text-sm"
+          )}
+          data-testid="text-current-prayer"
+        >
+          {current ? t(current.labelBn, current.labelEn) : "—"}
+        </p>
+
+        {/* ── Live clock with seconds ── */}
+        <div
+          className="flex items-baseline mt-0.5"
+          style={{ gap: 6 }}
+        >
           <span
             className={cn(
               "font-bold text-white tabular-nums leading-none drop-shadow",
-              preferences.seniorMode ? "text-4xl" : "text-3xl"
+              preferences.seniorMode ? "text-[2.2rem]" : "text-[1.9rem]"
             )}
-            style={{ letterSpacing: "0.08em", fontFeatureSettings: '"tnum"' }}
+            style={{ letterSpacing: "0.07em", fontFeatureSettings: '"tnum"' }}
             data-testid="text-live-clock"
           >
             {liveClock}
           </span>
-          <span className={cn(
-            "font-semibold leading-none",
-            preferences.seniorMode ? "text-sm" : "text-xs"
-          )}
-            style={{ color: "rgba(255,255,255,0.55)" }}
+          <span
+            className={cn("font-medium leading-none", preferences.seniorMode ? "text-xs" : "text-[10px]")}
+            style={{ color: "rgba(255,255,255,0.5)" }}
           >
             {ampm}
           </span>
         </div>
 
         {/* divider */}
-        <div className="w-12 h-px my-1.5" style={{ background: "rgba(255,255,255,0.15)" }} />
+        <div
+          className="rounded-full my-1.5"
+          style={{ width: 36, height: 1, background: "rgba(255,255,255,0.18)" }}
+        />
 
-        {/* current prayer */}
+        {/* Countdown label */}
         <p
-          className={cn("font-semibold text-white/70 leading-none", preferences.seniorMode ? "text-sm" : "text-xs")}
-          data-testid="text-current-prayer"
+          className="text-[9px] tracking-widest uppercase"
+          style={{ color: "rgba(255,255,255,0.35)" }}
         >
-          {current ? t(current.labelBn, current.labelEn) : "—"}
+          {t("পরবর্তী পর্যন্ত", "until next")}
         </p>
 
-        {/* countdown */}
-        <p className="text-white/35 text-[9px] tracking-widest uppercase mt-0.5">
-          {t("পরবর্তী নামাজ পর্যন্ত", "until next prayer")}
-        </p>
+        {/* Countdown value */}
         <p
-          className={cn("font-bold text-white tabular-nums leading-none", preferences.seniorMode ? "text-xl" : "text-lg")}
-          style={{ letterSpacing: "0.12em", fontFeatureSettings: '"tnum"', marginTop: 2 }}
+          className={cn(
+            "font-bold text-white tabular-nums leading-none mt-0.5",
+            preferences.seniorMode ? "text-xl" : "text-lg"
+          )}
+          style={{ letterSpacing: "0.1em", fontFeatureSettings: '"tnum"' }}
           data-testid="text-prayer-countdown"
         >
           {countdown}
         </p>
 
+        {/* Next prayer hint */}
         {next && (
-          <p className="text-white/35 text-[9px] mt-1">
+          <p
+            className="text-[9px] mt-1.5"
+            style={{ color: "rgba(255,255,255,0.38)" }}
+          >
             {t(`পরবর্তী: ${next.labelBn}`, `Next: ${next.labelEn}`)}
             {" · "}
             {formatTimeShort(next.time, lang)}
