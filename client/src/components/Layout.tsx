@@ -26,19 +26,26 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div
-      className="flex flex-col h-screen max-w-md mx-auto bg-background relative"
-      style={{ fontFamily: "'Noto Sans Bengali', 'Open Sans', sans-serif" }}
+      className="flex flex-col max-w-md mx-auto bg-background relative"
+      style={{
+        fontFamily: "'Noto Sans Bengali', 'Open Sans', sans-serif",
+        minHeight: "100dvh",
+        paddingTop: "env(safe-area-inset-top)",
+      }}
     >
-      <div className="flex-1 overflow-y-auto pb-[64px]">
+      <div
+        className="flex-1 overflow-y-auto"
+        style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom))" }}
+      >
         {children}
       </div>
 
       {/* bottom nav */}
       <nav
         className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 bg-background/95 backdrop-blur-md border-t border-border"
-        style={{ height: 64 }}
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="flex items-stretch h-full">
+        <div className="flex items-stretch" style={{ height: 64 }}>
           {navItems.map((item) => {
             const isActive = item.path === "/" ? location === "/" : location.startsWith(item.path);
             const Icon = item.icon;
