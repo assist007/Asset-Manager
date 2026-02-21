@@ -25,12 +25,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { preferences, t } = useApp();
 
   return (
-    <>
-      {/* black status bar overlay */}
-      <div
-        className="fixed top-0 left-0 right-0 z-[999] bg-black"
-        style={{ height: "env(safe-area-inset-top)" }}
-      />
     <div
       className="flex flex-col max-w-md mx-auto bg-background relative"
       style={{
@@ -88,6 +82,5 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </nav>
     </div>
-    </>
   );
 }
