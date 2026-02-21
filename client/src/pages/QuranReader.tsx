@@ -179,7 +179,7 @@ function SurahView({ surah, onBack }: { surah: SurahMeta; onBack: () => void }) 
           >
             {surah.nameArabic}
           </p>
-          <p className="text-primary-foreground/70 text-sm mt-1">{surah.meaning}</p>
+          <p className="text-primary-foreground/70 text-sm mt-1">{t(surah.meaningBn, surah.meaning)}</p>
         </div>
       </div>
 
