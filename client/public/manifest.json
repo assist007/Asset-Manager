@@ -1,0 +1,27 @@
+{
+  "name": "আমার দ্বীন",
+  "short_name": "আমার দ্বীন",
+  "description": "নামাজের সময়, কোরআন, দোয়া — সম্পূর্ণ ইসলামিক অ্যাপ",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f2d1a",
+  "theme_color": "#1a6640",
+  "lang": "bn",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "utilities"],
+  "screenshots": []
+}
