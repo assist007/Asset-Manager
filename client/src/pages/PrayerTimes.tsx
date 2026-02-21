@@ -1,18 +1,14 @@
-import { Sun, Star, Sunset, CloudSun, Moon, Sunrise } from "lucide-react";
+import { Sun, Star, CloudSun, Moon, Sunrise } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useApp } from "@/contexts/AppContext";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
-import { formatTime, formatTimeShort } from "@/lib/prayerUtils";
+import { formatTimeShort, formatCountdown } from "@/lib/prayerUtils";
 import { cities } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 
-const prayerIcons = {
-  fajr:    Star,
-  dhuhr:   Sun,
-  asr:     CloudSun,
-  maghrib: Sunset,
-  isha:    Moon,
+const ICONS: Record<string, React.ElementType> = {
+  fajr: Star, dhuhr: Sun, asr: CloudSun, maghrib: Star, isha: Moon,
 };
 
 export default function PrayerTimes() {
@@ -22,7 +18,7 @@ export default function PrayerTimes() {
 
   if (!info) return null;
 
-  const { times, slots, currentIdx, nextIdx, now } = info;
+  const { times, currentSlot, nextSlot, secondsUntilNext, now } = info;
 
   const todayDate = now.toLocaleDateString("bn-BD", {
     weekday: "long", year: "numeric", month: "long", day: "numeric",
@@ -33,21 +29,25 @@ export default function PrayerTimes() {
   });
 
   const allRows = [
-    { id: "sehri",   labelBn: "সেহরি শেষ",   labelEn: "Sehri Ends",  arabicName: "سحر",     icon: Moon,    time: times.sehri,    special: true },
-    { id: "fajr",    labelBn: "ফজর",          labelEn: "Fajr",        arabicName: "الفجر",   icon: Star,    time: times.fajr },
-    { id: "sunrise", labelBn: "সূর্যোদয়",    labelEn: "Sunrise",     arabicName: "الشروق",  icon: Sunrise, time: times.sunrise,  special: true },
-    { id: "dhuhr",   labelBn: "যোহর",         labelEn: "Dhuhr",       arabicName: "الظهر",   icon: Sun,     time: times.dhuhr },
-    { id: "asr",     labelBn: "আসর",          labelEn: "Asr",         arabicName: "العصر",   icon: CloudSun,time: times.asr },
-    { id: "maghrib", labelBn: "মাগরিব/ইফতার", labelEn: "Maghrib/Iftar",arabicName: "المغرب", icon: Sunset,  time: times.maghrib },
-    { id: "isha",    labelBn: "ইশা",          labelEn: "Isha",        arabicName: "العشاء",  icon: Moon,    time: times.isha },
+    { id: "sehri",   labelBn: "সেহরি শেষ",    labelEn: "Sehri Ends",   arabicName: "سحر",     icon: Moon,    time: times.sehri,   special: true },
+    { id: "fajr",    labelBn: "ফজর",           labelEn: "Fajr",         arabicName: "الفجر",   icon: Star,    time: times.fajr },
+    { id: "sunrise", labelBn: "সূর্যোদয়",     labelEn: "Sunrise",      arabicName: "الشروق",  icon: Sunrise, time: times.sunrise, special: true },
+    { id: "dhuhr",   labelBn: "যোহর",          labelEn: "Dhuhr",        arabicName: "الظهر",   icon: Sun,     time: times.dhuhr },
+    { id: "asr",     labelBn: "আসর",           labelEn: "Asr",          arabicName: "العصر",   icon: CloudSun,time: times.asr },
+    { id: "maghrib", labelBn: "মাগরিব / ইফতার",labelEn: "Maghrib/Iftar",arabicName: "المغرب", icon: Star,   time: times.maghrib },
+    { id: "isha",    labelBn: "ইশা",           labelEn: "Isha",         arabicName: "العشاء",  icon: Moon,    time: times.isha },
   ];
 
-  const mainPrayerIds = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
-  const currentPrayerId = slots[currentIdx]?.id;
-  const nextPrayerId    = slots[nextIdx]?.id;
+  const nextPrayerId    = nextSlot.id;
+  const currentPrayerId = currentSlot.id;
+
+  const cd = formatCountdown(secondsUntilNext, preferences.language);
+
+  const NextIcon = ICONS[nextPrayerId] ?? Star;
 
   return (
     <div className="flex flex-col min-h-full bg-background">
+
       {/* Header */}
       <div
         className="relative px-5 pt-12 pb-6 text-primary-foreground overflow-hidden"
@@ -75,9 +75,9 @@ export default function PrayerTimes() {
           </div>
         </div>
 
-        {/* sehri / iftar quick strip */}
+        {/* Sehri / Iftar quick strip */}
         <div className="flex gap-3 mt-4">
-          <div className="flex-1 rounded-xl bg-white/8 px-3 py-2.5 backdrop-blur-sm" style={{ background: "rgba(255,255,255,0.08)" }}>
+          <div className="flex-1 rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.08)" }}>
             <p className="text-white/50 text-[10px] mb-0.5">{t("সেহরি শেষ", "Sehri")}</p>
             <p className={cn("font-bold text-white tabular-nums", preferences.seniorMode ? "text-xl" : "text-lg")}
               data-testid="text-sehri-time">{formatTimeShort(times.sehri)}</p>
@@ -90,56 +90,48 @@ export default function PrayerTimes() {
         </div>
       </div>
 
-      {/* Prayer rows */}
       <div className="px-4 py-4 space-y-2">
-        {/* Next prayer highlight */}
-        {(() => {
-          const next = slots[nextIdx];
-          if (!next) return null;
-          const Icon = prayerIcons[next.id as keyof typeof prayerIcons] || Star;
-          const secs = info.secondsUntilNext;
-          const hh = Math.floor(secs / 3600);
-          const mm = Math.floor((secs % 3600) / 60);
-          const ss = secs % 60;
-          const pad = (n: number) => String(n).padStart(2, "0");
-          const cd = `${pad(hh)}:${pad(mm)}:${pad(ss)}`;
-          const cdBn = cd.replace(/[0-9]/g, (d) => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
-          return (
-            <Card className="border-primary/25 bg-primary/5 mb-1">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center">
-                      <Icon className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">{t("পরবর্তী নামাজ", "Next Prayer")}</p>
-                      <p className={cn("font-bold text-foreground", preferences.seniorMode ? "text-lg" : "text-base")}>
-                        {t(next.labelBn, next.labelEn)}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
-                        {next.arabicName}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={cn("font-bold text-primary tabular-nums", preferences.seniorMode ? "text-2xl" : "text-xl")}
-                      data-testid="text-next-prayer-time">{formatTimeShort(next.time)}</p>
-                    <p className="text-[10px] text-muted-foreground tabular-nums mt-0.5">{t(cdBn, cd)}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })()}
 
+        {/* Next prayer highlight */}
+        <Card className="border-primary/25 bg-primary/5 mb-1">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center">
+                  <NextIcon className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">
+                    {t("পরবর্তী নামাজ", "Next Prayer")}
+                  </p>
+                  <p className={cn("font-bold text-foreground", preferences.seniorMode ? "text-lg" : "text-base")}>
+                    {t(nextSlot.labelBn, nextSlot.labelEn)}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
+                    {nextSlot.arabicName}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className={cn("font-bold text-primary tabular-nums", preferences.seniorMode ? "text-2xl" : "text-xl")}
+                  data-testid="text-next-prayer-time">{formatTimeShort(nextSlot.time)}</p>
+                <p className="text-[11px] text-muted-foreground tabular-nums mt-0.5">
+                  {cd}
+                </p>
+                <p className="text-[9px] text-muted-foreground/60">{t("বাকি", "left")}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Full schedule */}
         <Card>
           <CardContent className="p-0">
             {allRows.map((row, idx) => {
               const Icon = row.icon;
-              const isCurrentPrayer = mainPrayerIds.includes(row.id) && row.id === currentPrayerId;
-              const isNextPrayer    = mainPrayerIds.includes(row.id) && row.id === nextPrayerId;
-              const isPast = now > row.time && !isCurrentPrayer;
+              const isCurrentPrayer = !row.special && row.id === currentPrayerId;
+              const isNextPrayer    = !row.special && row.id === nextPrayerId;
+              const isPast = !isCurrentPrayer && now > row.time;
 
               return (
                 <div
@@ -149,12 +141,14 @@ export default function PrayerTimes() {
                     "flex items-center gap-4 px-4 py-3.5 transition-colors",
                     idx < allRows.length - 1 && "border-b border-border",
                     isCurrentPrayer && "bg-primary/5",
-                    row.special && "opacity-70"
+                    row.special && "opacity-65"
                   )}
                 >
                   <div className={cn(
                     "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-                    isCurrentPrayer ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                    isCurrentPrayer
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
                   )}>
                     <Icon className="w-4 h-4" />
                   </div>
@@ -199,7 +193,7 @@ export default function PrayerTimes() {
         </Card>
 
         <p className="text-center text-[11px] text-muted-foreground pt-1 pb-2">
-          {t("সময়গুলো ইসলামিক গণনা পদ্ধতি অনুযায়ী নির্ধারিত", "Times calculated using Islamic Karachi method")}
+          {t("করাচি পদ্ধতি • হানাফি মাজহাব", "Karachi method · Hanafi madhab")}
         </p>
       </div>
     </div>

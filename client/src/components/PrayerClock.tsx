@@ -12,28 +12,28 @@ export default function PrayerClock() {
     ? formatCountdown(info.secondsUntilNext, preferences.language)
     : "০০:০০:০০";
 
-  const current = info ? info.slots[info.currentIdx] : null;
-  const next    = info ? info.slots[info.nextIdx]    : null;
+  const current = info?.currentSlot ?? null;
+  const next    = info?.nextSlot    ?? null;
 
-  // SVG arc geometry
+  // SVG arc — bottom semicircle opening downward, arc across top
   const W = 280, H = 158;
   const cx = W / 2, cy = H;
   const R = 120;
   const GAP_DEG = 30;
-  const START = 180 + GAP_DEG;
-  const END   = 360 - GAP_DEG;
-  const SWEEP = END - START;
+  const START = 180 + GAP_DEG;  // 210°
+  const END   = 360 - GAP_DEG;  // 330°
+  const SWEEP = END - START;    // 120°
 
-  function polar(angleDeg: number) {
-    const rad = (angleDeg * Math.PI) / 180;
+  function polar(deg: number) {
+    const rad = (deg * Math.PI) / 180;
     return { x: cx + R * Math.cos(rad), y: cy + R * Math.sin(rad) };
   }
 
   function arc(a0: number, a1: number) {
     const s = polar(a0), e = polar(a1);
-    const lg = Math.abs(a1 - a0) > 180 ? 1 : 0;
-    const sw = a1 > a0 ? 1 : 0;
-    return `M ${s.x} ${s.y} A ${R} ${R} 0 ${lg} ${sw} ${e.x} ${e.y}`;
+    const large = Math.abs(a1 - a0) > 180 ? 1 : 0;
+    const sw    = a1 > a0 ? 1 : 0;
+    return `M ${s.x} ${s.y} A ${R} ${R} 0 ${large} ${sw} ${e.x} ${e.y}`;
   }
 
   const clampedProgress = Math.min(1, Math.max(0.005, progress));
@@ -42,7 +42,7 @@ export default function PrayerClock() {
 
   return (
     <div className="relative flex flex-col items-center" style={{ height: H + 32 }}>
-      {/* SVG arc */}
+      {/* Arc SVG */}
       <svg
         width={W} height={H + 8}
         viewBox={`0 0 ${W} ${H + 8}`}
@@ -62,17 +62,13 @@ export default function PrayerClock() {
         </defs>
 
         {/* track */}
-        <path
-          d={arc(START, END)}
-          fill="none" stroke="rgba(255,255,255,0.11)" strokeWidth="9" strokeLinecap="round"
-        />
+        <path d={arc(START, END)} fill="none"
+          stroke="rgba(255,255,255,0.11)" strokeWidth="9" strokeLinecap="round" />
 
         {/* fill */}
-        <path
-          d={arc(START, filledEnd)}
-          fill="none" stroke="url(#pcGrad)" strokeWidth="9" strokeLinecap="round"
-          filter="url(#pcGlow)"
-        />
+        <path d={arc(START, filledEnd)} fill="none"
+          stroke="url(#pcGrad)" strokeWidth="9" strokeLinecap="round"
+          filter="url(#pcGlow)" />
 
         {/* dot */}
         <circle cx={dot.x} cy={dot.y} r="11" fill="rgba(251,191,36,0.25)" />
