@@ -9,6 +9,8 @@ interface AppContextType {
   setSeniorMode: (v: boolean) => void;
   setLowDataMode: (v: boolean) => void;
   setDarkMode: (v: boolean) => void;
+  setGpsLocation: (lat: number, lon: number) => void;
+  clearGps: () => void;
   t: (bn: string, en: string) => string;
   fontSizeClass: string;
   amalChecked: Record<string, boolean>;
@@ -151,12 +153,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppContext.Provider
       value={{
         preferences,
-        setCity: (city) => updatePref({ city }),
+        setCity: (city) => updatePref({ city, useGps: false }),
         setLanguage: (language) => updatePref({ language }),
         setFontSize: (fontSize) => updatePref({ fontSize }),
         setSeniorMode: (seniorMode) => updatePref({ seniorMode }),
         setLowDataMode: (lowDataMode) => updatePref({ lowDataMode }),
         setDarkMode: (darkMode) => updatePref({ darkMode }),
+        setGpsLocation: (gpsLat, gpsLon) => updatePref({ useGps: true, gpsLat, gpsLon }),
+        clearGps: () => updatePref({ useGps: false, gpsLat: null, gpsLon: null }),
         t,
         fontSizeClass,
         amalChecked,

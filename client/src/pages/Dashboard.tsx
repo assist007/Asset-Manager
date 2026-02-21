@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import {
   Sun, Moon, BookOpen, Heart, Calculator, Check,
-  Star, Clock, ChevronRight, MapPin, Bell
+  Star, Clock, MapPin, Bell, LocateFixed
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -69,10 +69,16 @@ export default function Dashboard() {
         <div className="relative flex items-start justify-between gap-3 mb-1">
           <Link href="/settings">
             <button data-testid="button-city-header" className="flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-white/50 shrink-0 mt-0.5" />
+              {preferences.useGps
+                ? <LocateFixed className="w-3.5 h-3.5 text-emerald-300 shrink-0 mt-0.5" />
+                : <MapPin className="w-3.5 h-3.5 text-white/50 shrink-0 mt-0.5" />
+              }
               <div>
                 <p className="text-white font-semibold text-[15px] leading-tight">
-                  {t(city.nameBn, city.name)}, {t("বাংলাদেশ", "Bangladesh")}
+                  {preferences.useGps
+                    ? t("GPS অবস্থান", "GPS Location")
+                    : `${t(city.nameBn, city.name)}, ${t("বাংলাদেশ", "Bangladesh")}`
+                  }
                 </p>
                 <p className="text-white/40 text-[11px] mt-0.5">{todayDate}</p>
               </div>

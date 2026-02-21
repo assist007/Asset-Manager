@@ -71,6 +71,9 @@ export interface UserPreferences {
   seniorMode: boolean;
   lowDataMode: boolean;
   darkMode: boolean;
+  useGps: boolean;
+  gpsLat: number | null;
+  gpsLon: number | null;
 }
 
 export interface AmalItem {
@@ -407,6 +410,9 @@ export const defaultPreferences: UserPreferences = {
   seniorMode: false,
   lowDataMode: false,
   darkMode: false,
+  useGps: false,
+  gpsLat: null,
+  gpsLon: null,
 };
 
 export const RAMADAN_START_2026 = new Date("2026-02-20");

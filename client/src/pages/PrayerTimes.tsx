@@ -1,4 +1,4 @@
-import { Sun, Star, CloudSun, Moon, Sunrise } from "lucide-react";
+import { Sun, Star, CloudSun, Moon, Sunrise, LocateFixed } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useApp } from "@/contexts/AppContext";
@@ -62,8 +62,12 @@ export default function PrayerTimes() {
             <h1 className={cn("font-bold text-white", preferences.seniorMode ? "text-2xl" : "text-xl")}>
               {t("নামাজের সময়সূচি", "Prayer Times")}
             </h1>
-            <p className="text-white/60 text-sm mt-0.5">
-              {t(city.nameBn, city.name)}, {t("বাংলাদেশ", "Bangladesh")}
+            <p className="text-white/60 text-sm mt-0.5 flex items-center gap-1">
+              {preferences.useGps && <LocateFixed className="w-3 h-3 text-emerald-300" />}
+              {preferences.useGps
+                ? t("GPS অবস্থান", "GPS Location")
+                : `${t(city.nameBn, city.name)}, ${t("বাংলাদেশ", "Bangladesh")}`
+              }
             </p>
           </div>
           <div className="text-right shrink-0">

@@ -30,9 +30,22 @@ export interface CalculatedTimes {
   iftar:   Date;
 }
 
-export function calculatePrayerTimes(cityId: string, date: Date): CalculatedTimes {
-  const coords = cityCoords[cityId] ?? cityCoords.dhaka;
-  const coordinates = new Coordinates(coords.lat, coords.lon);
+export function calculatePrayerTimes(
+  cityId: string,
+  date: Date,
+  overrideLat?: number | null,
+  overrideLon?: number | null,
+): CalculatedTimes {
+  let lat: number, lon: number;
+  if (overrideLat != null && overrideLon != null) {
+    lat = overrideLat;
+    lon = overrideLon;
+  } else {
+    const c = cityCoords[cityId] ?? cityCoords.dhaka;
+    lat = c.lat;
+    lon = c.lon;
+  }
+  const coordinates = new Coordinates(lat, lon);
 
   const params = CalculationMethod.Karachi();
   params.madhab = Madhab.Hanafi;

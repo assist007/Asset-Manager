@@ -32,8 +32,8 @@ function buildSlots(times: CalculatedTimes): PrayerSlot[] {
   ];
 }
 
-function getPrayerInfo(cityId: string, now: Date): PrayerInfo {
-  const todayTimes = calculatePrayerTimes(cityId, now);
+function getPrayerInfo(cityId: string, now: Date, gpsLat?: number | null, gpsLon?: number | null): PrayerInfo {
+  const todayTimes = calculatePrayerTimes(cityId, now, gpsLat, gpsLon);
   const todaySlots = buildSlots(todayTimes);
 
   const isBeforeFajr = now < todaySlots[0].time;
@@ -43,7 +43,7 @@ function getPrayerInfo(cityId: string, now: Date): PrayerInfo {
     // current = yesterday's Isha, next = today's Fajr
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
-    const yTimes = calculatePrayerTimes(cityId, yesterday);
+    const yTimes = calculatePrayerTimes(cityId, yesterday, gpsLat, gpsLon);
     const ySlots  = buildSlots(yTimes);
 
     const currentSlot = ySlots[4]; // Isha
@@ -113,5 +113,8 @@ export function usePrayerTimes(): PrayerInfo | null {
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  return getPrayerInfo(preferences.city, now);
+  const gpsLat = preferences.useGps ? preferences.gpsLat : null;
+  const gpsLon = preferences.useGps ? preferences.gpsLon : null;
+
+  return getPrayerInfo(preferences.city, now, gpsLat, gpsLon);
 }
