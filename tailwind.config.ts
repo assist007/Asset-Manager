@@ -86,6 +86,8 @@ export default {
         sans: ["var(--font-sans)"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
+        bengali: ["Noto Sans Bengali", "sans-serif"],
+        arabic: ["Noto Naskh Arabic", "serif"],
       },
       keyframes: {
         "accordion-down": {
