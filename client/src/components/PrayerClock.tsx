@@ -17,27 +17,20 @@ function parseTimeToDate(timeStr: string, baseDate: Date): Date {
   return d;
 }
 
-function formatCountdown(totalSeconds: number): string {
+function formatCountdown(totalSeconds: number, lang: "bn" | "en"): string {
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = totalSeconds % 60;
-  const toBn = (n: number, pad = 2) =>
-    n.toString().padStart(pad, "0").replace(/[0-9]/g, (d) => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
-  return `${toBn(h)}:${toBn(m)}:${toBn(s)}`;
-}
-
-function formatCountdownEn(totalSeconds: number): string {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const toBn = (str: string) => str.replace(/[0-9]/g, (d) => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
+  const raw = `${pad(h)}:${pad(m)}:${pad(s)}`;
+  return lang === "bn" ? toBn(raw) : raw;
 }
 
 interface CurrentPrayerInfo {
   current: PrayerSlot;
   next: PrayerSlot;
   secondsRemaining: number;
-  totalDuration: number;
   progress: number;
 }
 
@@ -46,34 +39,35 @@ function getCurrentPrayerInfo(prayers: PrayerSlot[], now: Date): CurrentPrayerIn
   const today = new Date(now);
   const slots = prayers.map((p) => ({ ...p, date: parseTimeToDate(p.time, today) }));
 
-  let currentIdx = slots.length - 1;
+  let currentIdx = 0;
   for (let i = 0; i < slots.length; i++) {
-    if (now >= slots[i].date) {
-      currentIdx = i;
-    }
+    if (now >= slots[i].date) currentIdx = i;
   }
 
   const nextIdx = (currentIdx + 1) % slots.length;
-  const current = slots[currentIdx];
-  let next = slots[nextIdx];
-
-  let nextDate = next.date;
-  if (nextIdx < currentIdx) {
-    nextDate = new Date(next.date);
+  let nextDate = slots[nextIdx].date;
+  if (nextIdx <= currentIdx && nextIdx === 0) {
+    nextDate = new Date(nextDate);
     nextDate.setDate(nextDate.getDate() + 1);
   }
 
   const secondsRemaining = Math.max(0, Math.floor((nextDate.getTime() - now.getTime()) / 1000));
-  const totalDuration = Math.floor((nextDate.getTime() - current.date.getTime()) / 1000);
-  const progress = totalDuration > 0 ? 1 - secondsRemaining / totalDuration : 0;
+  const totalDuration = Math.max(1, Math.floor((nextDate.getTime() - slots[currentIdx].date.getTime()) / 1000));
+  const progress = Math.min(1, Math.max(0, 1 - secondsRemaining / totalDuration));
 
-  return {
-    current: prayers[currentIdx],
-    next: prayers[nextIdx],
-    secondsRemaining,
-    totalDuration,
-    progress,
-  };
+  return { current: prayers[currentIdx], next: prayers[nextIdx], secondsRemaining, progress };
+}
+
+function polarToXY(cx: number, cy: number, angleDeg: number, r: number) {
+  const rad = ((angleDeg - 90) * Math.PI) / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function describeArc(cx: number, cy: number, r: number, startDeg: number, endDeg: number) {
+  const s = polarToXY(cx, cy, startDeg, r);
+  const e = polarToXY(cx, cy, endDeg, r);
+  const large = endDeg - startDeg > 180 ? 1 : 0;
+  return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`;
 }
 
 export default function PrayerClock() {
@@ -85,10 +79,7 @@ export default function PrayerClock() {
     let last = Date.now();
     const tick = () => {
       const n = Date.now();
-      if (n - last >= 1000) {
-        last = n;
-        setNow(new Date());
-      }
+      if (n - last >= 1000) { last = n; setNow(new Date()); }
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
@@ -96,131 +87,119 @@ export default function PrayerClock() {
   }, []);
 
   const times = prayerTimes[preferences.city] || prayerTimes.dhaka;
-
   const prayers: PrayerSlot[] = [
-    { id: "fajr", labelBn: "ফজর", labelEn: "Fajr", time: times.fajr },
-    { id: "dhuhr", labelBn: "যোহর", labelEn: "Dhuhr", time: times.dhuhr },
-    { id: "asr", labelBn: "আসর", labelEn: "Asr", time: times.asr },
+    { id: "fajr",    labelBn: "ফজর",    labelEn: "Fajr",    time: times.fajr },
+    { id: "dhuhr",   labelBn: "যোহর",   labelEn: "Dhuhr",   time: times.dhuhr },
+    { id: "asr",     labelBn: "আসর",    labelEn: "Asr",     time: times.asr },
     { id: "maghrib", labelBn: "মাগরিব", labelEn: "Maghrib", time: times.maghrib },
-    { id: "isha", labelBn: "ইশা", labelEn: "Isha", time: times.isha },
+    { id: "isha",    labelBn: "ইশা",    labelEn: "Isha",    time: times.isha },
   ];
 
   const info = getCurrentPrayerInfo(prayers, now);
+  const countdown = info ? formatCountdown(info.secondsRemaining, preferences.language) : "০০:০০:০০";
+  const progress = info?.progress ?? 0;
 
-  const R = 90;
-  const cx = 140;
-  const cy = 130;
-  const startAngle = -210;
-  const sweepAngle = 240;
+  const W = 320;
+  const H = 200;
+  const cx = W / 2;
+  const cy = H - 20;
+  const R = 148;
 
-  function polarToXY(angleDeg: number, r: number) {
-    const rad = (angleDeg * Math.PI) / 180;
-    return {
-      x: cx + r * Math.cos(rad),
-      y: cy + r * Math.sin(rad),
-    };
-  }
+  const ARC_START = -210;
+  const ARC_END   =  30;
+  const ARC_SWEEP = ARC_END - ARC_START;
 
-  function arcPath(startDeg: number, endDeg: number, r: number) {
-    const start = polarToXY(startDeg, r);
-    const end = polarToXY(endDeg, r);
-    const diff = endDeg - startDeg;
-    const large = Math.abs(diff) > 180 ? 1 : 0;
-    const sweep = diff > 0 ? 1 : 0;
-    return `M ${start.x} ${start.y} A ${r} ${r} 0 ${large} ${sweep} ${end.x} ${end.y}`;
-  }
+  const filledEnd = ARC_START + ARC_SWEEP * progress;
+  const tipPos = polarToXY(cx, cy, filledEnd - 90 + 90, R);
 
-  const progress = info ? Math.min(1, Math.max(0, info.progress)) : 0;
-  const filledEndAngle = startAngle + sweepAngle * progress;
+  const trackPath  = describeArc(cx, cy, R, ARC_START + 90, ARC_END + 90);
+  const filledPath = progress > 0.005 ? describeArc(cx, cy, R, ARC_START + 90, filledEnd + 90) : null;
 
-  const dotPos = polarToXY(filledEndAngle, R);
-
-  const countdown = info
-    ? preferences.language === "bn"
-      ? formatCountdown(info.secondsRemaining)
-      : formatCountdownEn(info.secondsRemaining)
-    : "00:00:00";
+  const dotAngleRad = ((filledEnd - 90) * Math.PI) / 180;
+  const dotX = cx + R * Math.cos(dotAngleRad);
+  const dotY = cy + R * Math.sin(dotAngleRad);
 
   return (
-    <div className="relative flex flex-col items-center pb-2 pt-2">
-      <div className="relative" style={{ width: 280, height: 160 }}>
-        <svg width="280" height="160" viewBox="0 0 280 160" className="absolute inset-0">
-          <defs>
-            <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="hsl(158 64% 32%)" />
-              <stop offset="60%" stopColor="hsl(90 60% 40%)" />
-              <stop offset="100%" stopColor="hsl(38 95% 50%)" />
-            </linearGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-              <feMerge>
-                <feMergeNode in="coloredBlur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
+    <div className="relative w-full flex flex-col items-center select-none" style={{ height: H + 16 }}>
+      <svg
+        width={W}
+        height={H + 4}
+        viewBox={`0 0 ${W} ${H + 4}`}
+        className="absolute top-0 left-1/2 -translate-x-1/2"
+        style={{ overflow: "visible" }}
+      >
+        <defs>
+          <linearGradient id="arcFill" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stopColor="#22c55e" />
+            <stop offset="55%"  stopColor="#84cc16" />
+            <stop offset="100%" stopColor="#f59e0b" />
+          </linearGradient>
+          <filter id="dotGlow" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="arcGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
 
+        {/* track */}
+        <path
+          d={trackPath}
+          fill="none"
+          stroke="rgba(255,255,255,0.10)"
+          strokeWidth="11"
+          strokeLinecap="round"
+        />
+
+        {/* filled arc */}
+        {filledPath && (
           <path
-            d={arcPath(startAngle, startAngle + sweepAngle, R)}
+            d={filledPath}
             fill="none"
-            stroke="rgba(255,255,255,0.12)"
-            strokeWidth="10"
+            stroke="url(#arcFill)"
+            strokeWidth="11"
             strokeLinecap="round"
+            filter="url(#arcGlow)"
           />
+        )}
 
-          {progress > 0.01 && (
-            <path
-              d={arcPath(startAngle, filledEndAngle, R)}
-              fill="none"
-              stroke="url(#arcGrad)"
-              strokeWidth="10"
-              strokeLinecap="round"
-              filter="url(#glow)"
-            />
-          )}
+        {/* glowing dot at tip */}
+        {progress > 0.005 && (
+          <>
+            <circle cx={dotX} cy={dotY} r="10" fill="rgba(251,191,36,0.3)" />
+            <circle cx={dotX} cy={dotY} r="6"  fill="#fbbf24" filter="url(#dotGlow)" />
+            <circle cx={dotX} cy={dotY} r="3"  fill="white" />
+          </>
+        )}
+      </svg>
 
-          {progress > 0.01 && (
-            <circle
-              cx={dotPos.x}
-              cy={dotPos.y}
-              r="7"
-              fill="hsl(38 95% 55%)"
-              filter="url(#glow)"
-            />
-          )}
-        </svg>
-
-        <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ paddingTop: 24 }}>
-          <p
-            className={cn(
-              "font-bold text-primary-foreground",
-              preferences.seniorMode ? "text-2xl" : "text-xl"
-            )}
-            data-testid="text-current-prayer"
-          >
-            {info ? t(info.current.labelBn, info.current.labelEn) : "—"}
-          </p>
-          <p className="text-primary-foreground/60 text-[11px] mt-0.5">
-            {t("শেষ হতে বাকি", "Time remaining")}
-          </p>
-          <p
-            className={cn(
-              "font-bold text-primary-foreground tracking-widest mt-1",
-              preferences.seniorMode ? "text-2xl" : "text-xl"
-            )}
-            style={{ fontFeatureSettings: '"tnum"', letterSpacing: "0.08em" }}
-            data-testid="text-prayer-countdown"
-          >
-            {countdown}
-          </p>
-        </div>
-      </div>
-
-      {info && (
-        <p className="text-primary-foreground/60 text-xs mt-1">
-          {t(`পরবর্তী: ${info.next.labelBn} ${info.next.time}`, `Next: ${info.next.labelEn} ${info.next.time}`)}
+      {/* center text */}
+      <div
+        className="absolute flex flex-col items-center justify-center gap-0"
+        style={{ bottom: 28, left: 0, right: 0 }}
+      >
+        <p
+          className={cn("font-bold text-white drop-shadow-md", preferences.seniorMode ? "text-2xl" : "text-xl")}
+          data-testid="text-current-prayer"
+        >
+          {info ? t(info.current.labelBn, info.current.labelEn) : "—"}
         </p>
-      )}
+        <p className="text-white/55 text-[11px] mt-0.5 tracking-wide">
+          {t("শেষ হতে বাকি", "Time remaining")}
+        </p>
+        <p
+          className={cn(
+            "font-bold text-white mt-1 tracking-widest tabular-nums drop-shadow-md",
+            preferences.seniorMode ? "text-3xl" : "text-2xl"
+          )}
+          style={{ fontFeatureSettings: '"tnum"', letterSpacing: "0.1em" }}
+          data-testid="text-prayer-countdown"
+        >
+          {countdown}
+        </p>
+      </div>
     </div>
   );
 }
