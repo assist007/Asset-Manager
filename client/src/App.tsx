@@ -11,6 +11,7 @@ import QuranReader from "@/pages/QuranReader";
 import DuaLibrary from "@/pages/DuaLibrary";
 import ZakatCalculator from "@/pages/ZakatCalculator";
 import Settings from "@/pages/Settings";
+import IslamicCalendar from "@/pages/IslamicCalendar";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -19,6 +20,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/prayer" component={PrayerTimes} />
+        <Route path="/calendar" component={IslamicCalendar} />
         <Route path="/quran" component={QuranReader} />
         <Route path="/dua" component={DuaLibrary} />
         <Route path="/zakat" component={ZakatCalculator} />

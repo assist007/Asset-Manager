@@ -47,13 +47,15 @@ export function calculatePrayerTimes(
   }
   const coordinates = new Coordinates(lat, lon);
 
+  // Bangladesh Islamic Foundation uses Fajr 19.5°, Isha 17.5°
   const params = CalculationMethod.Karachi();
+  params.fajrAngle = 19.5;
+  params.ishaAngle = 17.5;
   params.madhab = Madhab.Hanafi;
 
   const pt = new PrayerTimes(coordinates, date, params);
 
-  const sehri = new Date(pt.fajr.getTime() - 10 * 60 * 1000);
-
+  // In Bangladesh, sehri officially ends AT Fajr time (no offset)
   return {
     fajr:    pt.fajr,
     sunrise: pt.sunrise,
@@ -61,7 +63,7 @@ export function calculatePrayerTimes(
     asr:     pt.asr,
     maghrib: pt.maghrib,
     isha:    pt.isha,
-    sehri,
+    sehri:   pt.fajr,
     iftar:   pt.maghrib,
   };
 }
