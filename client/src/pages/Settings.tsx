@@ -403,7 +403,7 @@ export default function Settings() {
           <CardContent className="p-4">
             <div className="text-center space-y-1">
               <p className={cn("font-bold text-foreground", preferences.seniorMode ? "text-base" : "text-sm")}>
-                {t("নূর — ইসলামিক অ্যাপ", "Noor — Islamic App")}
+                {t("আমার দ্বীন — ইসলামিক অ্যাপ", "Amar Deen — Islamic App")}
               </p>
               <p className={cn("text-muted-foreground", preferences.seniorMode ? "text-sm" : "text-xs")}>
                 {t("সংস্করণ ১.০ • বাংলাদেশ", "Version 1.0 • Bangladesh")}
