@@ -19,40 +19,38 @@ function ayahAudioUrl(surahId: number, ayahNum: number): string {
 }
 
 // ── Mini audio player bar ──
+// SurahView owns `playingIdx`; AudioBar is fully controlled.
+// When audio ends naturally it calls onAyahChange(next) → parent updates state.
 function AudioBar({
-  surahId, ayahs, playing, onStop,
+  surahId, ayahs, playingIdx, onAyahChange, onStop,
 }: {
   surahId: number;
   ayahs: QuranAyah[];
-  playing: number;             // ayah index playing (-1 = none)
+  playingIdx: number;          // controlled by parent
+  onAyahChange: (idx: number) => void;
   onStop: () => void;
 }) {
   const { preferences, t } = useApp();
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [currentIdx, setCurrentIdx] = useState(playing);
   const [isPaused, setIsPaused] = useState(false);
 
-  // Sync with external trigger
-  useEffect(() => {
-    setCurrentIdx(playing);
-    setIsPaused(false);
-  }, [playing]);
+  const ayah = ayahs[playingIdx];
 
-  const ayah = ayahs[currentIdx];
-
+  // Whenever the controlled index changes → load & play new ayah
   useEffect(() => {
-    if (!ayah || currentIdx < 0) return;
+    if (playingIdx < 0 || !ayah) return;
     const audio = audioRef.current;
     if (!audio) return;
     audio.src = ayahAudioUrl(surahId, ayah.number);
     audio.play().catch(() => {});
     setIsPaused(false);
-  }, [currentIdx, surahId]);
+  }, [playingIdx, surahId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // When a track ends → tell parent to advance (or stop)
   const handleEnded = () => {
-    const next = currentIdx + 1;
+    const next = playingIdx + 1;
     if (next < ayahs.length) {
-      setCurrentIdx(next);
+      onAyahChange(next);   // ← parent updates playingIdx → triggers re-render + above effect
     } else {
       onStop();
     }
@@ -65,7 +63,7 @@ function AudioBar({
     else          { audio.pause(); setIsPaused(true); }
   };
 
-  if (currentIdx < 0 || !ayah) return null;
+  if (playingIdx < 0 || !ayah) return null;
 
   return (
     <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-[calc(100%-32px)] max-w-[calc(448px-32px)] z-40 mx-4">
@@ -107,6 +105,18 @@ function SurahView({ surah, onBack }: { surah: SurahMeta; onBack: () => void }) 
   const { ayahs, status } = useQuranSurah(surah.id);
   const isBookmarked = bookmarks.includes(surah.id);
   const [playingIdx, setPlayingIdx] = useState(-1);
+  const cardRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+  // Auto-scroll to the ayah card that is now playing
+  useEffect(() => {
+    if (playingIdx < 0) return;
+    const el = cardRefs.current[playingIdx];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [playingIdx]);
+
+  const handleAyahChange = (idx: number) => setPlayingIdx(idx);
 
   const handleBack = () => {
     setLastReadSurah(surah.id);
@@ -218,6 +228,7 @@ function SurahView({ surah, onBack }: { surah: SurahMeta; onBack: () => void }) 
                 key={ayah.number}
                 data-testid={`ayah-card-${surah.id}-${ayah.number}`}
                 className={cn(isPlaying && "ring-2 ring-primary")}
+                ref={(el) => { cardRefs.current[idx] = el as HTMLDivElement | null; }}
               >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3 mb-3">
@@ -274,7 +285,8 @@ function SurahView({ surah, onBack }: { surah: SurahMeta; onBack: () => void }) 
         <AudioBar
           surahId={surah.id}
           ayahs={ayahs}
-          playing={playingIdx}
+          playingIdx={playingIdx}
+          onAyahChange={handleAyahChange}
           onStop={() => setPlayingIdx(-1)}
         />
       )}
