@@ -127,7 +127,7 @@ function SurahView({ surah, onBack }: { surah: SurahMeta; onBack: () => void }) 
   return (
     <div className="flex flex-col min-h-full bg-background">
       {/* Header */}
-      <div className="bg-primary px-4 pt-10 pb-5 text-primary-foreground">
+      <div className="bg-primary px-4 pb-5 text-primary-foreground" style={{ paddingTop: "calc(env(safe-area-inset-top) + 16px)" }}>
         <div className="flex items-center gap-3 mb-3">
           <button
             data-testid="button-back-quran"
@@ -334,7 +334,7 @@ export default function QuranReader() {
 
   return (
     <div className="flex flex-col min-h-full bg-background">
-      <div className="bg-primary px-4 pt-10 pb-5 text-primary-foreground">
+      <div className="bg-primary px-4 pb-5 text-primary-foreground" style={{ paddingTop: "calc(env(safe-area-inset-top) + 16px)" }}>
         <h1 className={cn("font-bold mb-0.5", preferences.seniorMode ? "text-2xl" : "text-xl")}>
           {t("পবিত্র কোরআন", "Holy Quran")}
         </h1>

@@ -110,8 +110,8 @@ export default function IslamicCalendar() {
 
       {/* Header */}
       <div
-        className="relative px-5 pt-10 pb-5 text-primary-foreground overflow-hidden"
-        style={{ background: "linear-gradient(160deg, hsl(158 64% 19%) 0%, hsl(158 55% 25%) 100%)" }}
+        className="relative px-5 pb-5 text-primary-foreground overflow-hidden"
+        style={{ background: "linear-gradient(160deg, hsl(158 64% 19%) 0%, hsl(158 55% 25%) 100%)", paddingTop: "calc(env(safe-area-inset-top) + 16px)" }}
       >
         <div className="absolute inset-0 pointer-events-none"
           style={{ backgroundImage: "radial-gradient(ellipse at 85% 15%, rgba(255,255,255,0.05) 0%, transparent 55%)" }} />

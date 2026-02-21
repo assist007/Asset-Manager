@@ -30,7 +30,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       style={{
         fontFamily: "'Noto Sans Bengali', 'Open Sans', sans-serif",
         minHeight: "100dvh",
-        paddingTop: "env(safe-area-inset-top)",
       }}
     >
       <div

@@ -55,9 +55,10 @@ export default function Dashboard() {
 
       {/* ── HERO ── */}
       <div
-        className="relative overflow-hidden px-5 pt-10 pb-2 text-primary-foreground"
+        className="relative overflow-hidden px-5 pb-2 text-primary-foreground"
         style={{
           background: "linear-gradient(155deg, hsl(158 65% 18%) 0%, hsl(158 58% 24%) 60%, hsl(195 45% 20%) 100%)",
+          paddingTop: "calc(env(safe-area-inset-top) + 16px)",
         }}
       >
         {/* ambient glow */}

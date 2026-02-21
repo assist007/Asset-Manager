@@ -58,7 +58,7 @@ export default function ZakatCalculator() {
 
   return (
     <div className="flex flex-col min-h-full bg-background">
-      <div className="bg-primary px-4 pt-10 pb-5 text-primary-foreground">
+      <div className="bg-primary px-4 pb-5 text-primary-foreground" style={{ paddingTop: "calc(env(safe-area-inset-top) + 16px)" }}>
         <h1 className={cn("font-bold mb-1", preferences.seniorMode ? "text-2xl" : "text-xl")}>
           {t("যাকাত হিসাব", "Zakat Calculator")}
         </h1>
