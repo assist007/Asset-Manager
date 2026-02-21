@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useApp } from "@/contexts/AppContext";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
-import { formatTimeShort, formatCountdown } from "@/lib/prayerUtils";
+import { formatTimeShort, formatCountdown, formatLiveClock, formatAmPm } from "@/lib/prayerUtils";
 import { cities } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 
@@ -20,13 +20,14 @@ export default function PrayerTimes() {
 
   const { times, currentSlot, nextSlot, secondsUntilNext, now } = info;
 
+  const lang = preferences.language;
+
   const todayDate = now.toLocaleDateString("bn-BD", {
     weekday: "long", year: "numeric", month: "long", day: "numeric",
   });
 
-  const nowTimeStr = now.toLocaleTimeString("bn-BD", {
-    hour: "2-digit", minute: "2-digit", hour12: true,
-  });
+  const nowTimeStr = formatLiveClock(now, lang);
+  const nowAmPm    = formatAmPm(now, lang);
 
   const allRows = [
     { id: "sehri",   labelBn: "সেহরি শেষ",    labelEn: "Sehri Ends",   arabicName: "سحر",     icon: Moon,    time: times.sehri,   special: true },
@@ -72,10 +73,11 @@ export default function PrayerTimes() {
           </div>
           <div className="text-right shrink-0">
             <p className="text-white/40 text-[10px] mb-0.5">{t("এখন", "Now")}</p>
-            <p className={cn("font-bold text-white tabular-nums", preferences.seniorMode ? "text-2xl" : "text-xl")}
+            <p className={cn("font-bold text-white tabular-nums leading-none", preferences.seniorMode ? "text-2xl" : "text-xl")}
               data-testid="text-current-time">
               {nowTimeStr}
             </p>
+            <p className="text-white/40 text-[10px] mt-0.5">{nowAmPm}</p>
           </div>
         </div>
 
@@ -84,12 +86,12 @@ export default function PrayerTimes() {
           <div className="flex-1 rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.08)" }}>
             <p className="text-white/50 text-[10px] mb-0.5">{t("সেহরি শেষ", "Sehri")}</p>
             <p className={cn("font-bold text-white tabular-nums", preferences.seniorMode ? "text-xl" : "text-lg")}
-              data-testid="text-sehri-time">{formatTimeShort(times.sehri)}</p>
+              data-testid="text-sehri-time">{formatTimeShort(times.sehri, lang)}</p>
           </div>
           <div className="flex-1 rounded-xl px-3 py-2.5" style={{ background: "rgba(251,191,36,0.15)" }}>
             <p className="text-amber-200/70 text-[10px] mb-0.5">{t("ইফতার", "Iftar")}</p>
             <p className={cn("font-bold text-amber-200 tabular-nums", preferences.seniorMode ? "text-xl" : "text-lg")}
-              data-testid="text-iftar-time">{formatTimeShort(times.iftar)}</p>
+              data-testid="text-iftar-time">{formatTimeShort(times.iftar, lang)}</p>
           </div>
         </div>
       </div>
@@ -118,7 +120,7 @@ export default function PrayerTimes() {
               </div>
               <div className="text-right">
                 <p className={cn("font-bold text-primary tabular-nums", preferences.seniorMode ? "text-2xl" : "text-xl")}
-                  data-testid="text-next-prayer-time">{formatTimeShort(nextSlot.time)}</p>
+                  data-testid="text-next-prayer-time">{formatTimeShort(nextSlot.time, lang)}</p>
                 <p className="text-[11px] text-muted-foreground tabular-nums mt-0.5">
                   {cd}
                 </p>
@@ -187,7 +189,7 @@ export default function PrayerTimes() {
                       preferences.seniorMode ? "text-xl" : "text-lg",
                       isCurrentPrayer ? "text-primary" : isPast ? "text-muted-foreground" : "text-foreground"
                     )}>
-                      {formatTimeShort(row.time)}
+                      {formatTimeShort(row.time, lang)}
                     </p>
                   </div>
                 </div>

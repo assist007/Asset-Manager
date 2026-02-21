@@ -1,16 +1,17 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
-import { Search, Bookmark, BookmarkCheck, ArrowLeft, ChevronRight } from "lucide-react";
+import { Search, Bookmark, BookmarkCheck, ArrowLeft, ChevronRight, Loader2, WifiOff } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useApp } from "@/contexts/AppContext";
-import { surahs, ayahs, SurahInfo } from "@/lib/mockData";
+import { ALL_SURAHS, SurahMeta } from "@/lib/quranData";
+import { useQuranSurah } from "@/hooks/useQuranSurah";
 import { cn } from "@/lib/utils";
 
-function SurahView({ surah, onBack }: { surah: SurahInfo; onBack: () => void }) {
+function SurahView({ surah, onBack }: { surah: SurahMeta; onBack: () => void }) {
   const { preferences, t, bookmarks, toggleBookmark, setLastReadSurah } = useApp();
-  const surahAyahs = ayahs[surah.id] || [];
+  const lang = preferences.language;
+  const { ayahs, status } = useQuranSurah(surah.id);
   const isBookmarked = bookmarks.includes(surah.id);
 
   const handleBack = () => {
@@ -25,7 +26,7 @@ function SurahView({ surah, onBack }: { surah: SurahInfo; onBack: () => void }) 
           <button
             data-testid="button-back-quran"
             onClick={handleBack}
-            className="w-9 h-9 rounded-full bg-primary-foreground/10 flex items-center justify-center hover-elevate active-elevate-2"
+            className="w-9 h-9 rounded-full bg-primary-foreground/10 flex items-center justify-center active:scale-95 transition-transform"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -40,7 +41,7 @@ function SurahView({ surah, onBack }: { surah: SurahInfo; onBack: () => void }) 
           <button
             data-testid={`button-bookmark-${surah.id}`}
             onClick={() => toggleBookmark(surah.id)}
-            className="w-9 h-9 rounded-full bg-primary-foreground/10 flex items-center justify-center hover-elevate active-elevate-2"
+            className="w-9 h-9 rounded-full bg-primary-foreground/10 flex items-center justify-center active:scale-95 transition-transform"
           >
             {isBookmarked
               ? <BookmarkCheck className="w-5 h-5 fill-current" />
@@ -58,14 +59,49 @@ function SurahView({ surah, onBack }: { surah: SurahInfo; onBack: () => void }) 
         </div>
       </div>
 
-      {surahAyahs.length > 0 ? (
+      {/* Loading state */}
+      {status === "loading" && (
+        <div className="flex flex-col items-center justify-center flex-1 gap-3 p-8 text-center">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <p className={cn("text-muted-foreground", preferences.seniorMode ? "text-base" : "text-sm")}>
+            {t("আয়াত লোড হচ্ছে...", "Loading ayahs...")}
+          </p>
+        </div>
+      )}
+
+      {/* Error / offline state */}
+      {status === "error" && (
+        <div className="flex flex-col items-center justify-center flex-1 gap-3 p-8 text-center">
+          <WifiOff className="w-10 h-10 text-muted-foreground/50" />
+          <p className={cn("font-semibold text-muted-foreground", preferences.seniorMode ? "text-base" : "text-sm")}>
+            {t("ইন্টারনেট সংযোগ প্রয়োজন।", "Internet connection required.")}
+          </p>
+          <p className="text-xs text-muted-foreground/60">
+            {t("একবার লোড হলে অফলাইনেও পড়া যাবে।", "Once loaded, works offline too.")}
+          </p>
+        </div>
+      )}
+
+      {/* Ayahs */}
+      {status === "success" && (
         <div className="px-4 py-4 space-y-3">
-          {surahAyahs.map((ayah) => (
-            <Card key={ayah.id} data-testid={`ayah-card-${surah.id}-${ayah.ayahNumber}`}>
+          {/* Bismillah — skip for At-Tawbah (9) and Al-Fatihah (1, starts with it) */}
+          {surah.id !== 9 && surah.id !== 1 && (
+            <div className="text-center py-3 border-b border-border mb-4">
+              <p
+                className={cn("text-foreground/80", preferences.seniorMode ? "text-3xl" : "text-2xl")}
+                style={{ fontFamily: "'Noto Naskh Arabic', serif", direction: "rtl", lineHeight: "2" }}
+              >
+                بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِيمِ
+              </p>
+            </div>
+          )}
+          {ayahs.map((ayah) => (
+            <Card key={ayah.number} data-testid={`ayah-card-${surah.id}-${ayah.number}`}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
-                    <span className="text-xs font-bold text-primary">{ayah.ayahNumber}</span>
+                    <span className="text-xs font-bold text-primary">{ayah.number}</span>
                   </div>
                   <p
                     className={cn(
@@ -82,19 +118,12 @@ function SurahView({ surah, onBack }: { surah: SurahInfo; onBack: () => void }) 
                     "text-muted-foreground leading-relaxed",
                     preferences.seniorMode ? "text-base" : "text-sm"
                   )}>
-                    {t(ayah.translationBn, ayah.translationEn)}
+                    {lang === "bn" ? ayah.translationBn : ayah.translationEn}
                   </p>
                 </div>
               </CardContent>
             </Card>
           ))}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center flex-1 p-8 text-center">
-          <BookmarkCheck className="w-12 h-12 text-muted-foreground/50 mb-3" />
-          <p className={cn("font-semibold text-muted-foreground", preferences.seniorMode ? "text-base" : "text-sm")}>
-            {t("এই সূরার আয়াত অফলাইনে পাওয়া যায়নি।", "Ayahs for this surah not available offline.")}
-          </p>
         </div>
       )}
     </div>
@@ -104,33 +133,48 @@ function SurahView({ surah, onBack }: { surah: SurahInfo; onBack: () => void }) 
 export default function QuranReader() {
   const { preferences, t, bookmarks, toggleBookmark, lastReadSurah } = useApp();
   const [search, setSearch] = useState("");
-  const [selectedSurah, setSelectedSurah] = useState<SurahInfo | null>(null);
-  const [activeFilter, setActiveFilter] = useState<"all" | "bookmarked">("all");
+  const [selectedSurah, setSelectedSurah] = useState<SurahMeta | null>(null);
+  const [activeFilter, setActiveFilter] = useState<"all" | "meccan" | "medinan" | "bookmarked">("all");
 
   if (selectedSurah) {
     return <SurahView surah={selectedSurah} onBack={() => setSelectedSurah(null)} />;
   }
 
-  const filteredSurahs = surahs.filter((s) => {
+  const filteredSurahs = ALL_SURAHS.filter((s) => {
     const matchesSearch =
       search === "" ||
       s.nameBn.includes(search) ||
       s.name.toLowerCase().includes(search.toLowerCase()) ||
       s.nameArabic.includes(search) ||
-      s.meaningBn.includes(search);
-    const matchesFilter = activeFilter === "all" || bookmarks.includes(s.id);
+      s.meaningBn.includes(search) ||
+      s.meaning.toLowerCase().includes(search.toLowerCase()) ||
+      String(s.id) === search;
+    const matchesFilter =
+      activeFilter === "all" ||
+      (activeFilter === "bookmarked" && bookmarks.includes(s.id)) ||
+      (activeFilter === "meccan"    && s.revelationType === "Meccan") ||
+      (activeFilter === "medinan"   && s.revelationType === "Medinan");
     return matchesSearch && matchesFilter;
   });
 
-  const lastRead = surahs.find((s) => s.id === lastReadSurah);
+  const lastRead = ALL_SURAHS.find((s) => s.id === lastReadSurah);
+
+  const filters: Array<{ key: typeof activeFilter; labelBn: string; labelEn: string }> = [
+    { key: "all",       labelBn: "সব",       labelEn: "All" },
+    { key: "meccan",    labelBn: "মক্কী",    labelEn: "Meccan" },
+    { key: "medinan",   labelBn: "মাদানী",   labelEn: "Medinan" },
+    { key: "bookmarked",labelBn: "বুকমার্ক", labelEn: "Saved" },
+  ];
 
   return (
     <div className="flex flex-col min-h-full bg-background">
       <div className="bg-primary px-4 pt-10 pb-5 text-primary-foreground">
-        <h1 className={cn("font-bold mb-1", preferences.seniorMode ? "text-2xl" : "text-xl")}>
+        <h1 className={cn("font-bold mb-0.5", preferences.seniorMode ? "text-2xl" : "text-xl")}>
           {t("পবিত্র কোরআন", "Holy Quran")}
         </h1>
-        <p className="text-primary-foreground/70 text-sm">{t("১১৪টি সূরা", "114 Surahs")}</p>
+        <p className="text-primary-foreground/70 text-sm">
+          {t("১১৪টি সূরা", "114 Surahs")}
+        </p>
       </div>
 
       <div className="px-4 py-3 space-y-3">
@@ -138,7 +182,7 @@ export default function QuranReader() {
           <button
             data-testid="button-continue-reading"
             onClick={() => setSelectedSurah(lastRead)}
-            className="w-full flex items-center gap-3 p-3 rounded-md bg-muted/60 text-left hover-elevate active-elevate-2"
+            className="w-full flex items-center gap-3 p-3 rounded-md bg-muted/60 text-left active:scale-[0.99] transition-transform"
           >
             <BookmarkCheck className="w-5 h-5 text-primary flex-shrink-0" />
             <div className="flex-1">
@@ -155,38 +199,30 @@ export default function QuranReader() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             data-testid="input-quran-search"
-            placeholder={t("সূরা খুঁজুন...", "Search surah...")}
+            placeholder={t("সূরা খুঁজুন... নাম বা নম্বর", "Search by name or number...")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
           />
         </div>
 
-        <div className="flex gap-2 flex-wrap">
-          <button
-            data-testid="filter-all-surahs"
-            onClick={() => setActiveFilter("all")}
-            className={cn(
-              "px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover-elevate active-elevate-2",
-              activeFilter === "all"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground"
-            )}
-          >
-            {t("সব", "All")}
-          </button>
-          <button
-            data-testid="filter-bookmarked-surahs"
-            onClick={() => setActiveFilter("bookmarked")}
-            className={cn(
-              "px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover-elevate active-elevate-2",
-              activeFilter === "bookmarked"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground"
-            )}
-          >
-            {t("বুকমার্ক", "Bookmarked")} {bookmarks.length > 0 && `(${bookmarks.length})`}
-          </button>
+        <div className="flex gap-2 overflow-x-auto pb-0.5 no-scrollbar">
+          {filters.map((f) => (
+            <button
+              key={f.key}
+              data-testid={`filter-${f.key}-surahs`}
+              onClick={() => setActiveFilter(f.key)}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap shrink-0 active:scale-95",
+                activeFilter === f.key
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              {t(f.labelBn, f.labelEn)}
+              {f.key === "bookmarked" && bookmarks.length > 0 && ` (${bookmarks.length})`}
+            </button>
+          ))}
         </div>
 
         {filteredSurahs.length === 0 ? (
@@ -209,25 +245,25 @@ export default function QuranReader() {
                     data-testid={`button-surah-${surah.id}`}
                     onClick={() => setSelectedSurah(surah)}
                     className={cn(
-                      "w-full flex items-center gap-3 px-4 py-3 text-left hover-elevate active-elevate-2 transition-colors",
+                      "w-full flex items-center gap-3 px-4 py-3 text-left active:bg-muted/60 transition-colors",
                       idx < filteredSurahs.length - 1 && "border-b border-border"
                     )}
                   >
                     <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <span className="text-xs font-bold text-primary">{surah.id}</span>
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className={cn("font-semibold text-foreground", preferences.seniorMode ? "text-base" : "text-sm")}>
                           {t(surah.nameBn, surah.name)}
                         </p>
                         {isBookmarked && <Bookmark className="w-3 h-3 text-primary fill-primary" />}
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground truncate">
                         {t(`${surah.meaningBn} • ${surah.ayahCount} আয়াত`, `${surah.meaning} • ${surah.ayahCount} Ayahs`)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                       <p
                         className="text-foreground/70"
                         style={{ fontFamily: "'Noto Naskh Arabic', serif", fontSize: preferences.seniorMode ? "18px" : "15px" }}
@@ -242,6 +278,13 @@ export default function QuranReader() {
             </CardContent>
           </Card>
         )}
+
+        <p className="text-center text-[10px] text-muted-foreground pb-2">
+          {t(
+            "আয়াত প্রথমবার লোড হওয়ার পর অফলাইনে পড়া যাবে।",
+            "Ayahs are cached locally after first load."
+          )}
+        </p>
       </div>
     </div>
   );

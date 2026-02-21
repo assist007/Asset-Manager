@@ -83,12 +83,38 @@ export function formatTime(date: Date, lang: "bn" | "en" = "bn"): string {
   return `${h12}:${mm} ${h < 12 ? "AM" : "PM"}`;
 }
 
-export function formatTimeShort(date: Date): string {
+export function formatTimeShort(date: Date, lang: "bn" | "en" = "en"): string {
   const h = date.getHours();
   const m = date.getMinutes();
   const h12 = h % 12 === 0 ? 12 : h % 12;
   const mm = String(m).padStart(2, "0");
-  return `${h12}:${mm}`;
+  const raw = `${h12}:${mm}`;
+  if (lang === "bn") return raw.replace(/[0-9]/g, (d) => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
+  return raw;
+}
+
+export function formatLiveClock(date: Date, lang: "bn" | "en" = "en"): string {
+  const h = date.getHours();
+  const m = date.getMinutes();
+  const s = date.getSeconds();
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const raw = `${pad(h12)}:${pad(m)}:${pad(s)}`;
+  if (lang === "bn") return raw.replace(/[0-9]/g, (d) => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
+  return raw;
+}
+
+export function formatAmPm(date: Date, lang: "bn" | "en" = "en"): string {
+  const h = date.getHours();
+  if (lang === "bn") {
+    if (h < 5)  return "রাত";
+    if (h < 12) return "সকাল";
+    if (h < 15) return "দুপুর";
+    if (h < 18) return "বিকাল";
+    if (h < 20) return "সন্ধ্যা";
+    return "রাত";
+  }
+  return h < 12 ? "AM" : "PM";
 }
 
 export function formatCountdown(totalSeconds: number, lang: "bn" | "en"): string {

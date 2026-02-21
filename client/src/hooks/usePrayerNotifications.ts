@@ -46,7 +46,7 @@ export function usePrayerNotifications() {
         const icon = PRAYER_ICONS[slot.id] ?? "🕌";
         const titleBn = `${icon} ${slot.labelBn}র ওয়াক্ত শুরু হয়েছে`;
         const titleEn = `${icon} Time for ${slot.labelEn}`;
-        const body = formatTimeShort(slot.time);
+        const body = formatTimeShort(slot.time, preferences.language);
         try {
           new Notification(
             preferences.language === "bn" ? titleBn : titleEn,

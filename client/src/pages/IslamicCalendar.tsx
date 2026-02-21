@@ -265,13 +265,13 @@ export default function IslamicCalendar() {
                   <div className="flex-1 rounded-lg p-2.5 bg-blue-50 dark:bg-blue-950/40">
                     <p className="text-[10px] text-muted-foreground">{t("সেহরি / ফজর", "Sehri / Fajr")}</p>
                     <p className={cn("font-bold text-blue-700 dark:text-blue-300 tabular-nums", preferences.seniorMode ? "text-xl" : "text-lg")}>
-                      {formatTimeShort(selectedPrayers.sehri)}
+                      {formatTimeShort(selectedPrayers.sehri, preferences.language)}
                     </p>
                   </div>
                   <div className="flex-1 rounded-lg p-2.5 bg-amber-50 dark:bg-amber-950/40">
                     <p className="text-[10px] text-muted-foreground">{t("ইফতার / মাগরিব", "Iftar / Maghrib")}</p>
                     <p className={cn("font-bold text-amber-700 dark:text-amber-300 tabular-nums", preferences.seniorMode ? "text-xl" : "text-lg")}>
-                      {formatTimeShort(selectedPrayers.iftar)}
+                      {formatTimeShort(selectedPrayers.iftar, preferences.language)}
                     </p>
                   </div>
                 </div>
@@ -295,7 +295,7 @@ export default function IslamicCalendar() {
                       </span>
                     </div>
                     <span className={cn("font-bold text-foreground tabular-nums", preferences.seniorMode ? "text-lg" : "text-base")}>
-                      {formatTimeShort(row.time)}
+                      {formatTimeShort(row.time, preferences.language)}
                     </span>
                   </div>
                 );

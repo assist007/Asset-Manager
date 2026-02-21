@@ -140,14 +140,14 @@ export default function Dashboard() {
                     <p className="text-xs text-muted-foreground mb-1">{t("সেহরি শেষ", "Sehri Ends")}</p>
                     <p className={cn("font-bold text-foreground tabular-nums", preferences.seniorMode ? "text-2xl" : "text-xl")}
                       data-testid="text-sehri-dashboard">
-                      {formatTimeShort(prayerInfo.times.sehri)}
+                      {formatTimeShort(prayerInfo.times.sehri, preferences.language)}
                     </p>
                   </div>
                   <div className="p-4">
                     <p className="text-xs text-muted-foreground mb-1">{t("ইফতার", "Iftar")}</p>
                     <p className={cn("font-bold text-foreground tabular-nums", preferences.seniorMode ? "text-2xl" : "text-xl")}
                       data-testid="text-iftar-dashboard">
-                      {formatTimeShort(prayerInfo.times.iftar)}
+                      {formatTimeShort(prayerInfo.times.iftar, preferences.language)}
                     </p>
                   </div>
                 </div>
