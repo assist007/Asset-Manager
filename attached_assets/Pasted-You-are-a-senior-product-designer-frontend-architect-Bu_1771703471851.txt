@@ -1,0 +1,112 @@
+You are a senior product designer + frontend architect. 
+Build a complete FRONTEND-ONLY Islamic app (Ramadan-first) targeted for Bangladesh, accessible to all literacy levels.
+
+GOALS
+- Extremely simple UX for all ages (including elderly)
+- Bengali-first interface with optional English
+- Offline-first UI (cache indicators, graceful empty states)
+- Low-data mode and lightweight design
+- No backend implementation; use local mock JSON and local storage for user preferences
+
+TECH STACK (choose one and stick to it)
+- Option A: React + Next.js (App Router) + TypeScript + Tailwind
+- Option B: React (Vite) + TypeScript + Tailwind
+(Use shadcn/ui components if React. If not available, implement clean components yourself.)
+
+DELIVERABLES (must output all)
+1) Product Requirement Document (PRD)
+   - Problem statement (Bangladesh Ramadan use cases)
+   - Target personas (e.g., senior user, student, busy worker, new Muslim learner)
+   - Core value proposition
+   - Feature list with priorities (P0/P1/P2)
+   - Non-goals (backend, real notifications, real location services)
+   - Accessibility & localization requirements (Bangla, big fonts)
+
+2) Information Architecture
+   - Tab navigation (max 5 tabs)
+   - Screen list + short description per screen
+   - User flows:
+     a) First open onboarding -> select city -> Ramadan dashboard
+     b) Open Quran -> search -> bookmark -> continue reading
+     c) Zakat calculator -> save result -> monthly charity goal
+     d) Dua -> play audio -> add favorite
+
+3) UX Writing (Bangla-first)
+   - Provide Bangla microcopy for headings/buttons/errors
+   - Tone: respectful, simple, non-preachy
+   - Include “Senior Mode” wording
+
+4) UI Design System
+   - Typography scale (include big font mode)
+   - Spacing rules, button sizes (thumb-friendly)
+   - Color guidance (high contrast, night mode)
+   - Component list:
+     - App shell, header, tabs
+     - Prayer time card
+     - Ramadan countdown card
+     - Checklist
+     - Quran reader (ayah blocks)
+     - Audio player bar
+     - Search box + filter chips
+     - Zakat calculator form
+     - Settings toggles
+     - Empty/loading/error states
+   - Iconography guidelines
+
+5) Data Models (mock only)
+   - Provide mock JSON schemas for:
+     - Cities & prayer/iftar/sehri times (sample)
+     - Quran surah list, ayah objects (sample)
+     - Dua objects (category, arabic, bangla, audioUrl)
+     - User preferences (city, language, fontSize, lowDataMode)
+     - Bookmarks & favorites
+
+6) Frontend Architecture
+   - Folder structure
+   - Routing map
+   - State management approach (simple: context/local storage)
+   - Offline caching strategy (frontend only explanation)
+   - Performance approach for low-end Android devices (list techniques)
+   - Localization approach (i18n keys example for Bangla/English)
+
+7) Implementation Plan (Frontend-only)
+   - Milestones (Week 1/2/3 style)
+   - Screen-by-screen checklist
+   - QA checklist (Bangla rendering, big fonts, slow device)
+
+8) Produce the actual UI code scaffold
+   - Create pages/screens with dummy data and components
+   - Responsive mobile-first
+   - Include Settings page with:
+     - Language toggle (বাংলা/English)
+     - Font size (Normal/Large/Extra Large)
+     - Senior mode toggle
+     - Low data mode toggle
+     - City selector
+   - Include Ramadan Dashboard page with:
+     - Sehri ends / Iftar time for selected city
+     - Dua buttons (niyat/iftar)
+     - Amal checklist with local persistence
+     - Quick links to Quran, Dua, Zakat
+   - Include Quran Reader page:
+     - Surah list, open surah, ayah blocks with bangla meaning
+     - Bookmark and last-read persistence
+   - Include Prayer Times page:
+     - Daily times list, highlight current/next
+   - Include Zakat Calculator page:
+     - Input fields in BDT + gold/silver option
+     - Result summary UI and save
+   - Include Dua Library page:
+     - Categories, search, favorites, audio player UI
+
+CONSTRAINTS
+- No backend, no real push notifications, no real GPS calls; provide UI only with mocked selectors.
+- Must be usable offline with cached mock data and local storage.
+- Keep navigation super simple and Bangla-first.
+
+OUTPUT FORMAT
+- Start with PRD
+- Then IA, User flows, Copy, Design System, Data models
+- Then Frontend architecture
+- Then Implementation plan
+- Then provide code (complete project structure + key files).
