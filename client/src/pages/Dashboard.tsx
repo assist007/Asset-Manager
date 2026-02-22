@@ -15,14 +15,11 @@ import { cn } from "@/lib/utils";
 
 import PrayerClock from "@/components/PrayerClock";
 
-const ARABIC_MONTHS = [
-  "مُحَرَّم","صَفَر","رَبِيع ٱلْأَوَّل","رَبِيع ٱلثَّانِي",
-  "جُمَادَىٰ ٱلْأُولَىٰ","جُمَادَىٰ ٱلثَّانِيَة","رَجَب","شَعْبَان",
-  "رَمَضَان","شَوَّال","ذُو ٱلْقَعْدَة","ذُو ٱلْحِجَّة",
+const HIJRI_MONTHS_BN_DISPLAY = [
+  "মুহাররম","সফর","রবিউল আউয়াল","রবিউস সানি",
+  "জুমাদাল আউয়াল","জুমাদাস সানি","রজব","শাবান",
+  "রমজান","শাওয়াল","জিলকদ","জিলহজ",
 ];
-function toArabicDigits(n: number): string {
-  return String(n).replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[+d]);
-}
 
 function getRamadanDay(now: Date): number | null {
   const today = new Date(now); today.setHours(0,0,0,0);
@@ -71,10 +68,10 @@ export default function Dashboard() {
   const dateEnglish = now.toLocaleDateString("en-GB", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
-  const dateHijri = `${toArabicDigits(hijri.day)} ${ARABIC_MONTHS[hijri.month - 1]}، ${toArabicDigits(hijri.year)} هـ`;
+  const dateHijri = `${toBnDigits(hijri.day)} ${HIJRI_MONTHS_BN_DISPLAY[hijri.month - 1]}, ${toBnDigits(hijri.year)} হি.`;
 
   const dateLabels = [dateBangla, dateEnglish, dateHijri];
-  const dateIsArabic = datePhase === 2;
+  const dateIsArabic = false;
 
   const quickLinks = [
     { path: "/quran",  icon: BookOpen,   labelBn: "কোরআন",  labelEn: "Quran",   cls: "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300" },
@@ -116,11 +113,7 @@ export default function Dashboard() {
                 </p>
                 <p
                   className="text-white/40 text-[11px] mt-0.5 transition-opacity duration-300"
-                  style={{
-                    opacity: dateVisible ? 1 : 0,
-                    direction: dateIsArabic ? "rtl" : "ltr",
-                    fontFamily: dateIsArabic ? "'Noto Naskh Arabic', serif" : undefined,
-                  }}
+                  style={{ opacity: dateVisible ? 1 : 0 }}
                 >
                   {dateLabels[datePhase]}
                 </p>
