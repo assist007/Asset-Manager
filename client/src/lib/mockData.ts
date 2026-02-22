@@ -415,8 +415,8 @@ export const defaultPreferences: UserPreferences = {
   gpsLon: null,
 };
 
-export const RAMADAN_START_2026 = new Date("2026-02-20");
-export const RAMADAN_END_2026 = new Date("2026-03-21");
+export const RAMADAN_START_2026 = new Date("2026-02-19");
+export const RAMADAN_END_2026 = new Date("2026-03-20");
 export const NISAB_GOLD_GRAM = 87.48;
 export const NISAB_SILVER_GRAM = 612.36;
 export const GOLD_PRICE_PER_GRAM_BDT = 9500;

@@ -10,8 +10,19 @@ import { useApp } from "@/contexts/AppContext";
 import { cities, amalItems, RAMADAN_START_2026, RAMADAN_END_2026 } from "@/lib/mockData";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { formatTimeShort } from "@/lib/prayerUtils";
+import { gregorianToHijri, toBnDigits } from "@/lib/hijriUtils";
 import { cn } from "@/lib/utils";
+
 import PrayerClock from "@/components/PrayerClock";
+
+const ARABIC_MONTHS = [
+  "مُحَرَّم","صَفَر","رَبِيع ٱلْأَوَّل","رَبِيع ٱلثَّانِي",
+  "جُمَادَىٰ ٱلْأُولَىٰ","جُمَادَىٰ ٱلثَّانِيَة","رَجَب","شَعْبَان",
+  "رَمَضَان","شَوَّال","ذُو ٱلْقَعْدَة","ذُو ٱلْحِجَّة",
+];
+function toArabicDigits(n: number): string {
+  return String(n).replace(/[0-9]/g, d => "٠١٢٣٤٥٦٧٨٩"[+d]);
+}
 
 function getRamadanDay(now: Date): number | null {
   const today = new Date(now); today.setHours(0,0,0,0);
@@ -39,9 +50,32 @@ export default function Dashboard() {
   const isRamadan  = ramadanDay !== null;
   const checkedCount = amalItems.filter((i) => amalChecked[i.id]).length;
 
-  const todayDate = now.toLocaleDateString("bn-BD", {
+  // Cycling date animation
+  const [datePhase, setDatePhase] = useState(0);
+  const [dateVisible, setDateVisible] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDateVisible(false);
+      setTimeout(() => {
+        setDatePhase(p => (p + 1) % 3);
+        setDateVisible(true);
+      }, 300);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const hijri = gregorianToHijri(now);
+  const dateBengali = now.toLocaleDateString("bn-BD", {
     weekday: "long", year: "numeric", month: "long", day: "numeric",
   });
+  const dateEnglish = now.toLocaleDateString("en-GB", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+  const dateHijri = `${toArabicDigits(hijri.day)} ${ARABIC_MONTHS[hijri.month - 1]}، ${toArabicDigits(hijri.year)} هـ`;
+
+  const dateLabels = [dateBengali, dateEnglish, dateHijri];
+  const dateIsArabic = datePhase === 2;
 
   const quickLinks = [
     { path: "/quran",  icon: BookOpen,   labelBn: "কোরআন",  labelEn: "Quran",   cls: "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300" },
@@ -81,7 +115,16 @@ export default function Dashboard() {
                     : `${t(city.nameBn, city.name)}, ${t("বাংলাদেশ", "Bangladesh")}`
                   }
                 </p>
-                <p className="text-white/40 text-[11px] mt-0.5">{todayDate}</p>
+                <p
+                  className="text-white/40 text-[11px] mt-0.5 transition-opacity duration-300"
+                  style={{
+                    opacity: dateVisible ? 1 : 0,
+                    direction: dateIsArabic ? "rtl" : "ltr",
+                    fontFamily: dateIsArabic ? "'Noto Naskh Arabic', serif" : undefined,
+                  }}
+                >
+                  {dateLabels[datePhase]}
+                </p>
               </div>
             </button>
           </Link>
