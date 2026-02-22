@@ -10,7 +10,7 @@ import { useApp } from "@/contexts/AppContext";
 import { cities, amalItems, RAMADAN_START_2026, RAMADAN_END_2026 } from "@/lib/mockData";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { formatTimeShort } from "@/lib/prayerUtils";
-import { gregorianToHijri, toBnDigits } from "@/lib/hijriUtils";
+import { gregorianToHijri, gregorianToBangla, toBnDigits } from "@/lib/hijriUtils";
 import { cn } from "@/lib/utils";
 
 import PrayerClock from "@/components/PrayerClock";
@@ -66,15 +66,14 @@ export default function Dashboard() {
   }, []);
 
   const hijri = gregorianToHijri(now);
-  const dateBengali = now.toLocaleDateString("bn-BD", {
-    weekday: "long", year: "numeric", month: "long", day: "numeric",
-  });
+  const bangla = gregorianToBangla(now);
+  const dateBangla = bangla.formatted; // e.g. ৯ই ফাল্গুন, ১৪৩২
   const dateEnglish = now.toLocaleDateString("en-GB", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
   const dateHijri = `${toArabicDigits(hijri.day)} ${ARABIC_MONTHS[hijri.month - 1]}، ${toArabicDigits(hijri.year)} هـ`;
 
-  const dateLabels = [dateBengali, dateEnglish, dateHijri];
+  const dateLabels = [dateBangla, dateEnglish, dateHijri];
   const dateIsArabic = datePhase === 2;
 
   const quickLinks = [
