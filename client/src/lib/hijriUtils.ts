@@ -18,48 +18,54 @@ const HIJRI_MONTHS_BN = [
   "রমজান","শাওয়াল","জিলকদ","জিলহজ",
 ];
 
-// Use browser Intl API with Umm Al-Qura Islamic calendar for accuracy
+// ── Reference-based Hijri calculation ──────────────────────────────────────
+// Anchored to: 1 Ramadan 1447 AH = 19 February 2026 (Bangladesh)
+// Uses standard tabular Islamic calendar month lengths from this known point.
+
+const HIJRI_REF_GREGORIAN = new Date(2026, 1, 19); // Feb 19 2026, local midnight
+
+function hijriIsLeap(year: number): boolean {
+  return [2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29].includes(year % 30);
+}
+
+function hijriMonthDays(year: number, month: number): number {
+  if (month % 2 === 1) return 30;
+  if (month === 12) return hijriIsLeap(year) ? 30 : 29;
+  return 29;
+}
+
 export function gregorianToHijri(date: Date): HijriDate {
-  try {
-    const fmt = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", {
-      year: "numeric",
-      month: "numeric",
-      day: "numeric",
-    });
-    const parts = fmt.formatToParts(date);
-    const get = (type: string) =>
-      parseInt(parts.find((p) => p.type === type)?.value ?? "0", 10);
-    const year  = get("year");
-    const month = get("month");
-    const day   = get("day");
-    return {
-      year,
-      month,
-      day,
-      monthName:   HIJRI_MONTHS_EN[month - 1] ?? "",
-      monthNameBn: HIJRI_MONTHS_BN[month - 1] ?? "",
-    };
-  } catch {
-    // Fallback: simple epoch-based tabular calculation (may be ±1 day)
-    const MS_PER_DAY = 86400000;
-    // Reference: 1 Ramadan 1447 = Feb 19, 2026
-    const REF_JD = 2461380; // floor(JD) for Feb 19 2026
-    const REF_H  = { year: 1447, month: 9, day: 1 };
-    const targetJD = Math.floor(date.getTime() / MS_PER_DAY + 2440587.5);
-    let diff = targetJD - REF_JD;
-    const MONTH_DAYS = [30,29,30,29,30,29,30,29,30,29,30,29];
-    let { year, month, day } = REF_H;
-    while (diff > 0) {
-      const daysLeft = MONTH_DAYS[month - 1] - day + 1;
-      if (diff < daysLeft) { day += diff; diff = 0; }
-      else { diff -= daysLeft; month++; day = 1; if (month > 12) { month = 1; year++; } }
+  const ref = new Date(HIJRI_REF_GREGORIAN);
+  ref.setHours(0, 0, 0, 0);
+  const target = new Date(date);
+  target.setHours(0, 0, 0, 0);
+  const diff = Math.round((target.getTime() - ref.getTime()) / 86_400_000);
+
+  let year = 1447, month = 9, day = 1;
+
+  if (diff >= 0) {
+    let rem = diff;
+    while (rem > 0) {
+      const left = hijriMonthDays(year, month) - day + 1;
+      if (rem < left) { day += rem; rem = 0; }
+      else { rem -= left; day = 1; month++; if (month > 12) { month = 1; year++; } }
     }
-    while (diff < 0) {
-      diff++; day--;
-      if (day < 1) { month--; if (month < 1) { month = 12; year--; } day = MONTH_DAYS[month - 1]; }
+  } else {
+    let rem = -diff;
+    while (rem > 0) {
+      rem--; day--;
+      if (day < 1) {
+        month--; if (month < 1) { month = 12; year--; }
+        day = hijriMonthDays(year, month);
+      }
     }
-    return { year, month, day, monthName: HIJRI_MONTHS_EN[month-1]??"", monthNameBn: HIJRI_MONTHS_BN[month-1]??"" };
   }
+
+  return {
+    year, month, day,
+    monthName:   HIJRI_MONTHS_EN[month - 1] ?? "",
+    monthNameBn: HIJRI_MONTHS_BN[month - 1] ?? "",
+  };
 }
 
 export function toBnDigits(n: number | string): string {
